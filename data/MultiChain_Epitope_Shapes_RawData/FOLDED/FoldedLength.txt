@@ -1,0 +1,14 @@
+3W14_1.pdb:17
+3LQA_1.pdb:15
+3SDY_1.pdb:14
+3U2S_1.pdb:17
+2FJG_1.pdb:11
+3H42_1.pdb:9
+3VE0_1.pdb:19
+4N90_1.pdb:11
+4WFF_1.pdb:18
+4YDJ_1.pdb:9
+2VWE_1.pdb:12
+4UT9_1.pdb:15
+4RDQ_1.pdb:13
+4RDQ_1.pdb:12
