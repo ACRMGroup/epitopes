@@ -8,17 +8,45 @@ use strict;
  
 use Exporter qw(import);
 my $pymol = "/usr/bin/pymol"; 
-our @EXPORT_OK = qw(getRegionRange getFragmentResidue writepymolScript 
-getDistanceToStraightLine getChainLabelAndType getCACoordsForRegion getXYZ
-calculateDistanceWithLine getBestFitLineCoords makePeptideFigure
-SecondaryStrAssignmentToPeptides printArrays getLeastDistanceCAlpha 
-getEuclideanDistance SumOfDistance getSide getPointfromDistance 
-getPercentAlpha makePeptideFigure getVectors getVectorAngle
-getVecPointByArrayofPoints getMidPoints absoluteDistancePoints
-getLeastDistanceCAlpha getNearestCAToMidPoint getSecondclosestpoint 
-getSide getPointfromDistance getReferencepoints getAllCADistanceWithLine
-getPointsForCAonLine getPointToPointDistanceOnLine averageDeviation 
-reverseRegLineDir checkDeviationOnEnds getResDist getResSeq getContacts);
+our @EXPORT_OK = qw (
+                        getRegionRange
+                        getFragmentResidue
+                        writepymolScript 
+                        getDistanceToStraightLine
+                        getChainLabelAndType
+                        getCACoordsForRegion
+                        getXYZ
+                        calculateDistanceWithLine
+                        getBestFitLineCoords
+                        makePeptideFigure
+                        SecondaryStrAssignmentToPeptides
+                        printArrays
+                        getLeastDistanceCAlpha 
+                        getEuclideanDistance
+                        SumOfDistance
+                        getSide
+                        getPointfromDistance 
+                        getPercentAlpha
+                        makePeptideFigure
+                        getVectors
+                        getVectorAngle
+                        getVecPointByArrayofPoints
+                        getMidPoints
+                        absoluteDistancePoints
+                        getLeastDistanceCAlpha
+                        getNearestCAToMidPoint
+                        getSecondclosestpoint 
+                        getReferencepoints
+                        getAllCADistanceWithLine
+                        getPointsForCAonLine
+                        getPointToPointDistanceOnLine
+                        averageDeviation 
+                        reverseRegLineDir
+                        checkDeviationOnEnds
+                        getResDist
+                        getResSeq
+                        getContacts
+                );
 use Math::Vec qw(NewVec);
 use SFPerlVars;
 use List::Util qw(reduce);
@@ -100,6 +128,7 @@ sub writepymolScript
     my ($rangeRegionRef, $residueFragmentRef, 
 	$antigenChainLabel, $alignedPdb, $pdbFile) = @_;
     my $pdbFileName = basename($pdbFile, ".pdb"); 
+    my @antigenChains = @{$antigenChainLabel};
     
     # Writing pymol script to provide as input to pymol program
     open (my $PYMOL, '>', "pymolscript.pml") or die
@@ -110,32 +139,68 @@ load $alignedPdb
 bg_color white                                                
 turn x, 90                                                    
 turn y, 90                                                    
-turn x, 90                                                    
+Turn x, 90                                                    
 turn y, 90                                                    
 show cartoon                                                  
 hide lines                                                    
 select light, chain L                                         
 remove light                                                  
 select heavy, chain H                                         
-remove heavy                                                  
-color cyan, chain $antigenChainLabel
+remove heavy
 __EOF
+    my $count = 1;
+    foreach my $agChain (@antigenChains) {
+        chomp $agChain;
+        if ( ( $agChain eq "L") or ( $agChain eq "H") ) {
+            $agChain = $count;
+            print {$PYMOL} "color cyan, chain $agChain\n";
+            $count++;
+        }
+        else {
+            print {$PYMOL} "color cyan, chain $agChain\n";
 
+        }
+    }
+    
+    
 # Select the given epitope range and color that in red
 foreach my $record (@{$rangeRegionRef})
-{ 
-    # Accessing elements from anonymous array
-    print {$PYMOL} "select regions, resi $record->[0]-$record->[1]\n";
-    print {$PYMOL} "color red, regions\n";
+{
+    my $chainLabel = substr ($record->[0], 0, 1); # Obtaining first character
+    my $start = substr ($record->[0], 1); # Obtaining RESEQ - start
+    my $end = substr ($record->[1], 1); # Obtaining RESEQ - end
+    my $count = 1;
+    if ( ( $chainLabel eq "L") or ( $chainLabel eq "H") ) {
+        $chainLabel = $count;
+        print {$PYMOL} "select regions, resi $start-$end and chain $chainLabel\n";
+        print {$PYMOL} "color red, regions\n";
+        $count++;
+    }
+    else {
+        print {$PYMOL} "select regions, resi $start-$end and chain $chainLabel\n";
+        print {$PYMOL} "color red, regions\n";
+    }
+
 }
 
 # Select and color the fragment residues
 foreach my $record (@{$residueFragmentRef})
 {
-    print {$PYMOL} "select fragments, resi $record\n";
-    print {$PYMOL} "color green, fragments\n";
-}
-    
+    my $chainLabel = substr ($record, 0, 1); # Obtaining first character
+    my $start = substr ($record, 1);
+
+    my $count = 1;
+        if ( ( $chainLabel eq "L") or ( $chainLabel eq "H") ) {
+        $chainLabel = $count;
+        print {$PYMOL} "select fragments, resi $start and chain $chainLabel\n";
+        print {$PYMOL} "color green, fragments\n";
+        $count++;
+    }
+    else {
+        print {$PYMOL} "select fragments, resi $start and chain $chainLabel\n";
+        print {$PYMOL} "color green, fragments\n";
+    }
+}    
 # Taking the image
 print {$PYMOL} "ray 800,600\n";
 print {$PYMOL} "png $pdbFileName.png\n";
@@ -181,17 +246,20 @@ sub getDistanceToStraightLine
 	print {$SUMRY} "region_".$count."\n";
 
 	my ($startRes, $endRes) = ($record->[0], $record->[1]);
+        
 	# Secondary structure assignment to each region
 	@epitopeSS = SecondaryStrAssignmentToPeptides 
-	    ($pdbFile, $antigenChainLabel, $startRes, $endRes, $count);
-	
+	    ($pdbFile, $startRes, $endRes, $count);
+
+        my $antigenChainLabel = substr ($startRes, 0, 1);
+        
 	print {$SUMRY} "Secondry sturcture of region\n";
 	print {$SUMRY} "@epitopeSS\n";
-	
-
+	        
+        
 	# Obtains CA atom records for each region
 	@coordsCA = getCACoordsForRegion
-	    ($PDBAllCoordsRef, $antigenChainLabel, $startRes, $endRes);
+	    ($PDBAllCoordsRef, $startRes, $endRes);
 	my $sizePep =  scalar @coordsCA;
 	print {$SUMRY} "Size of peptide = $sizePep\n";
         print {$REGLEN} "$sizePep ";
@@ -204,8 +272,7 @@ sub getDistanceToStraightLine
 	    $endRes.$pdbFileName.".pdb";
 
 	# Get Best Fit line for the peptide of given range
-	getBestFitLine($startRes, $endRes, $antigenChainLabel,
-		       $pdbFile, $regressionOF); 
+	getBestFitLine($startRes, $endRes, $pdbFile, $regressionOF); 
 	print {$SUMRY} "Best fit line in the region is obtained\n";
 	
 	# Making figure of region with line of best fit in pymol 
@@ -330,7 +397,7 @@ sub getDistanceToStraightLine
 	print {$SUMRY} "Hash contaning all the CA actual points has been ".
 	    "obtained\n";
 	print {$SUMRY} Dumper (\%CApointsOnLine);
-	print {$SSINFO} "$pdbFile:";
+	print {$SSINFO} "$pdbFile:$sizePep:";
         # To map the deviation between ideal point and actual CA point
 	# RF-CA distance on line provides deviation
 	my @IdealActualDeviations = 
@@ -420,6 +487,7 @@ sub classifyShape
 		}
 	    }
 	}
+        
 	
 	else
 	{	    
@@ -431,7 +499,7 @@ sub classifyShape
         }
 	
     }
-    elsif (($averageDeviation > 1.0) and ($averageDeviation < 2.5))
+    elsif (($averageDeviation > 1.0) and ($averageDeviation <= 2.5))
     {
 	if ($sizePep >= 6)
 	{
@@ -569,12 +637,11 @@ sub classifyShape
 
 sub getBestFitLine
 {
-    my ($startRes, $endRes, $antigenChainLabel,
-        $pdbFile, $regressionOF) = @_;
+    my ($startRes, $endRes, $pdbFile, $regressionOF) = @_;
     my $pdbline = $SFPerlVars::pdbline;
     
-    my $startRes = $antigenChainLabel.".".$startRes; # e.g: A23               
-    my $endRes = $antigenChainLabel.".".$endRes; # e.g: A28                   
+#    my $startRes = $antigenChainLabel.".".$startRes; # e.g: A23               
+ #   my $endRes = $antigenChainLabel.".".$endRes; # e.g: A28                   
     
     # Using program pdbline to obtain line of best fit for each region        
     `$pdbline -r LIN -a O $startRes $endRes ../$pdbFile $regressionOF`;
@@ -631,7 +698,7 @@ sub getChainLabelAndType
 
 sub getCACoordsForRegion
 {
-    my ($PDBAllCoordsRef, $antigenChainLabel, $startRes, $endRes) = @_;
+    my ($PDBAllCoordsRef, $startRes, $endRes) = @_;
     my (%parsedPDB, @CACoords, $coords, $x, $y, $z);
  
    # map function works like a foreach loop and returns an array
@@ -639,8 +706,8 @@ sub getCACoordsForRegion
     # each line from $PDBAllCoordsRef is returned as a hash reference and 
     # @atomHrefs contains references of each hash 
 
-    my $startResID = $antigenChainLabel . $startRes;
-    my $endResID   = $antigenChainLabel . $endRes;
+#    my $startResID = $antigenChainLabel . $startRes;
+ #   my $endResID   = $antigenChainLabel . $endRes;
 
    # print "DEBUGG: $startResID\n";
   #  print "DEBUGG: $endResID\n";
@@ -651,14 +718,16 @@ sub getCACoordsForRegion
 #    print "resid " . $_->{resID} . " index " . $_->{residueIndex} . "\n"
 #	foreach @atomHrefs;
    #exit; 
-    my $startIndex = findResidueIndexForResID($startResID, @atomHrefs);
-    my $endIndex   = findResidueIndexForResID($endResID, @atomHrefs);
-    #print "DEBUGG: $startIndex\n";
-    #print "DEBUGG: $endIndex\n";
+    my $startIndex = findResidueIndexForResID($startRes, @atomHrefs);
+    my $endIndex   = findResidueIndexForResID($endRes, @atomHrefs);
+    print "DEBUGG: $startIndex\n";
+    print "DEBUGG: $endIndex\n";
     #exit; 
     my @regionCAHrefs = 
 	map {[$_->{x}, $_->{y}, $_->{z}]} 
     grep { isCAInRange($_, $startIndex, $endIndex) } @atomHrefs;
+
+    print "HHHHHHHHHH:", Dumper (\@regionCAHrefs );
     
     return @regionCAHrefs;  
 }
@@ -849,25 +918,34 @@ __EOF
 
 sub SecondaryStrAssignmentToPeptides
 {
-    my ($pdbFile, $antigenChainLabel, 
-	$startRes, $endRes, $count) = @_;
+    my ($pdbFile, $startRes, $endRes, $count) = @_;
     my ($pdbID, $ext1, @epitopeSS, $ext);
     # Open Output file
     open (my $SS, ">EpitopeSS$count.txt") or
 	die "Can not open file $!";
     
     # Xmas files parser to parse secondary structure assignments
-    my $xmastoss = $SFPerlVars::xmastoss;
-    my $pdbFilePath = "/acrm/data/xmas/pdb/pdb";
-    $ext = ".xmas";
+#    my $xmastoss = $SFPerlVars::xmastoss;
+ #   my $pdbFilePath = "/acrm/data/xmas/pdb/pdb";
+ #   $ext = ".xmas";
+  #  ($pdbID, $ext1) = split('_',  $pdbFile);
+  #  $pdbFile = $pdbFilePath.lc($pdbID).$ext;
+  #  $antigenChainLabel = uc($antigenChainLabel);
+
+    my $pdbFilePath = "/acrm/data/pdb/pdb";
+    $ext = ".ent"; 
+    
     ($pdbID, $ext1) = split('_',  $pdbFile);
     $pdbFile = $pdbFilePath.lc($pdbID).$ext;
-    $antigenChainLabel = uc($antigenChainLabel);
+
+    #* $antigenChainLabel = uc($antigenChainLabel);
+    my $antigenChainLabel = substr ($startRes, 0, 1);
     
     # Parse Secondary structure assignments of only Antigen chain
-    my @antigen =
-	`$xmastoss $pdbFile | grep $antigenChainLabel` ;
-    
+
+    my @antigen = `pdbsecstr $pdbFile | grep ^$antigenChainLabel`;
+
+      
     my ($insection, $endsection) = 0; 
     # Obtain SS assignments of the given range of epitope
     foreach my $line (@antigen)
@@ -878,7 +956,7 @@ sub SecondaryStrAssignmentToPeptides
 	{
 	    last;
 	}
-	if ($line =~ m/$antigenChainLabel$startRes\s+/g)
+	if ($line =~ m/$startRes\s+/g)
 	{
 	    $insection = 1; 
 	}
@@ -887,7 +965,7 @@ sub SecondaryStrAssignmentToPeptides
 	    push (@epitopeSS, $line);
 	    print {$SS} $line, "\n"; # Writes on file
 	}
-	if ($line =~ m/$antigenChainLabel$endRes\s+/g)
+	if ($line =~ m/$endRes\s+/g)
 	{
 	    $endsection=1;
 	}
@@ -1478,7 +1556,7 @@ sub getPercentAlpha
         elsif ($ssElem =~ /(\s+)E|e(\s?)/) {
             $betaCount++;
         }
-        elsif ( $ssElem =~ /(\s+)C|c(\s?)/) {
+        elsif ( $ssElem =~ /(\s+)C|c|-(\s?)/) {
             $coilCount++;
         }
     }
@@ -1759,11 +1837,13 @@ sub getContacts
     my $ncontacts = 0; 
     my $maxcontactsDistant = 0; 
     my $maxcontactsLocal = 0;
-    
+
+        
     # To check every residue
     my ($countLocal, $countDistant) = 0; 
     my $countL = 0; 
     my $countD = 0;
+
     for (my $n = 0; $n < $length; $n++)
     {
 	# The spacing to check the contacts
@@ -1798,6 +1878,7 @@ sub getContacts
 		    }
 		}
 	    }
+            
              # If the length of peptide is more than 12 then it should start 
              # from the spacing of 5 other wise half of length
 	    my $contactThershold;  
@@ -1823,7 +1904,9 @@ sub getContacts
 		   $maxcontactsDistant = $ncontacts;
 	       }
 	   }
+                
 	}
+        
 #	last; 
     }
     print "Local MaxCOntacts; ", $maxcontactsLocal, "\n";
