@@ -12,6 +12,11 @@ use strict;
 #use warnings;
 use Data::Dumper;
 use Cwd;
+
+# Add the path of the executable to the library path
+use FindBin;
+use lib $FindBin::Bin;
+
 use Antigen_Contacts qw
     (antibody_antigen_contacts
      antibody_cont_residue      

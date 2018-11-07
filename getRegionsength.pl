@@ -2,7 +2,10 @@ use strict;
 use warnings; 
 use Data::Dumper; 
 
-use lib("~/scripts/lib");
+# Add the path of the executable to the library path
+use FindBin;
+use lib $FindBin::Bin;
+
 use epitope qw(getRegionRange); 
 
 open (my $IN, "epitope_sequence-G3-CR3") or die $!; 

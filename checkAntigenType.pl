@@ -4,9 +4,13 @@
 # Will create a directory for non-protein antigens and will move non-protein
 # antigen in that directory
 
-
 use strict; 
 use warnings; 
+
+# Add the path of the executable to the library path
+use FindBin;
+use lib $FindBin::Bin;
+
 use general qw(readDirPDB); 
 use SFPerlVars;
 use Cwd;

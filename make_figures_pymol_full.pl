@@ -7,6 +7,10 @@
 use strict;
 #use warnings;
 use Data::Dumper;
+# Add the path of the executable to the library path
+use FindBin;
+use lib $FindBin::Bin;
+
 use SFPerlVars;
 use epitope qw(getRegionRange getFragmentResidue);
 use general qw (readDirPDB);

@@ -6,6 +6,10 @@
 # It also gives a text file with length of antigen chain
 use strict;
 #use warnings;
+# Add the path of the executable to the library path
+use FindBin;
+use lib $FindBin::Bin;
+
 use Data::Dumper;
 use SFPerlVars;
 use epitope qw(getRegionRange getFragmentResidue writepymolScript );

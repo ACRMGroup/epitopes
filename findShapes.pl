@@ -6,6 +6,10 @@ use strict;
 # i.e: Line of best fit for every epitope. Draws a line of fit for each of 
 # epitope and then finds distance of each of CA with straight line ...
 
+# Add the path of the executable to the library path
+use FindBin;
+use lib $FindBin::Bin;
+
 use Data::Dumper;
 use SFPerlVars;
 use Math::Vec qw(NewVec);
